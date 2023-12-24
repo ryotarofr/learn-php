@@ -1,3 +1,5 @@
+たくさん使うので：\q
+
 # Laravel Sail
 
 ## Install
@@ -321,4 +323,129 @@ mysql> select * from users;
 |  4 | u         | u@u.com                 | NULL              | $2y$12$mJob32oLvvc.AebRZSWey.n/TJQ6FIOTtreKtgxVaajLBYUFmycBG | NULL           | 2023-12-24 05:49:12 | 2023-12-24 05:49:12 |
 +----+-----------+-------------------------+-------------------+--------------------------------------------------------------+----------------+---------------------+---------------------+
 4 rows in set (0.00 sec)
+```
+
+## ユーザー認証
+
+ルート追加
+
+```php title="web.php"
+Route::get('/login', [App\Http\Controllers\LoginController::class, 'index'])
+->middleware('guest')
+->name('login');
+
+Route::post('/login', [App\Http\Controllers\LoginController::class, 'authenticate'])
+->middleware('guest');
+```
+
+php の `$credentials = $request->only('email','password');`この書き方 js で言うところの`let credentials = request.only('email','password')`みたいに後続のキーを取得してる感じ
+
+`->`が`.`
+
+ログインコントローラー
+
+```php title="LoginController.php"
+<<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+use App\Providers\RouteServiceProvider;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class LoginController extends Controller{
+  public function index() {
+    return view('auth.login');
+  }
+
+  public function authenticate(Request $request){
+    $credentials = $request->only('email','password');
+
+    // 認証に成功したらHOMEにリダイレクト
+    if(Auth::attempt($credentials)){
+      $request->session()->regenerate();
+      return redirect()->intended(RouteServiceProvider::HOME);
+    }
+
+    return back()->withErrors([
+      'manage' => 'メールアドレスまたはパスワードが正しくありません。'
+    ]);
+}
+}
+```
+
+ログインフォーム
+
+```php title="login.blade.php"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ログインフォーム</title>
+</head>
+<body>
+  @isset($errors)
+  <p style="color:red">{{ $errors->first('message') }}</p>
+  @endisset
+  <form name="loginform" action="/login" method="post">
+  {{ csrf_field() }}
+    <dl>
+      <dt>メールアドレス:</dt>
+      <dd><input type="text" name="email" size="30" value="{{ old('email') }}"></dd>
+      <dt>パスワード:</dt>
+      <dd><input type="password" name="password" size="30" value="{{ old('email') }}"></dd>
+    </dl>
+    <button type='submit' name='action' value='send'>ログイン</button>
+  </form>
+</body>
+</html>
+```
+
+ログアウト処理
+
+```php title="web.php"
+Route::get('/logout', [App\Http\Controllers\LoginController::class, 'logout'])
+->middleware('auth')
+->name('logout');
+```
+
+```php title="LoginController.php"
+  public function logout(Request $request){
+    Auth::logout();
+
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect(RouteServiceProvider::HOME);
+  }
+```
+
+ログインユーザーを表示
+
+```php title="home.blade.php"
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>トップ画面</title>
+    </head>
+    <body>
+         <p>こんにちは!
+         @if (Auth::check())
+        {{ \Auth::user()->name }}さん
+         </p>
+         <p><a href="/logout">ログアウト</a></p>
+
+         @else
+        ゲストさん</p>
+        <p><a href="/login">ログイン</a></br><a href="/register">登録</a></p>
+
+        @endif
+</body>
+</html>
 ```
