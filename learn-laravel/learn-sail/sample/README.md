@@ -16,8 +16,7 @@ curl -s https://laravel.build/sample | zsh
 
 `http://localhost/`
 
-![localhost](learn-laravel/learn-sail/sample/public/images/sail-up-localhost.png)
-<img src="learn-laravel/learn-sail/sample/public/images/sail-up-localhost.png" alt="" title="">
+![localhost](./public/images/sail-up-localhost.png)
 
 ## 終了
 
