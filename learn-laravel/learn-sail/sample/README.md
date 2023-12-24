@@ -105,3 +105,68 @@ for windows
 ```bash
 ./init.bat
 ```
+
+# Homestead と Vagrant 周り一旦スキップ
+
+todo
+
+# Test code
+
+create test code file
+
+```zsh
+sail artisan make:test HomeTest
+```
+
+add this:
+`learn-laravel/learn-sail/sample/tests/Feature/HomeTest.php`
+
+Laravel Shell のコンテナ内でも同様にテストコードを作成可能
+
+```zsh
+sail shell
+# sail@fbb4d5502bdf:/var/www/html$
+
+sail@fbb4d5502bdf:/var/www/html$ php artusan make:test HomeTest
+```
+
+以下ファイルにステータスコード 200 を res してたら OK
+
+```php title="/HomeTest.php"
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class HomeTest extends TestCase
+{
+    /**
+     * A basic feature test example.
+     */
+    public function test_example(): void
+    {
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
+    }
+}
+```
+
+## /home 画面のテストを実行
+
+```zsh
+sail test tests/Feature/HomeTest.php
+```
+
+以下のようになる
+
+```zsh
+  PASS  Tests\Feature\HomeTest
+  ✓ example                                                                                          0.88s
+
+  Tests:    1 passed (1 assertions)
+  Duration: 1.60s
+```
