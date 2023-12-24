@@ -170,3 +170,155 @@ sail test tests/Feature/HomeTest.php
   Tests:    1 passed (1 assertions)
   Duration: 1.60s
 ```
+
+<br />
+
+# ユーザー登録の実装
+
+データベーススキーマは作成済みのものを使う
+`learn-laravel/learn-sail/sample/database/migrations/2014_10_12_000000_create_users_table.php`
+
+マイグレーションファイルをデータベースに適応
+
+```zsh
+ sail artisan migrate
+```
+
+mysql に接続しテーブスを確認
+
+```zsh
+
+```
+
+一覧を表示
+
+```zsh
+mysql>show tables;
++------------------------+
+| Tables_in_sample       |
++------------------------+
+| failed_jobs            |
+| migrations             |
+| password_reset_tokens  |
+| personal_access_tokens |
+| users                  |
++------------------------+
+5 rows in set (0.00 sec)
+```
+
+mysql 接続終了: \q
+
+### 登録処理
+
+コントローラで処理作る
+mkdir : `learn-laravel/learn-sail/sample/app/Http/Controllers/ResisterController.php`
+
+```php title="ResisterController.php"
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+
+class RegisterController extends Controller{
+  public function create() {
+    return view('regist.register');
+  }
+
+  public function store(Request $request){
+    $request->validate([
+      'name' => 'required|string|max:255',
+      'email' => 'required|string|email|max:255|unique:users',
+      'password' => 'required|string|confirmed|min:8',
+    ]);
+
+    $user = User::create([
+      'name' => $request->name,
+      'email' => $request->email,
+      'password' => Hash::make($request->password),
+    ]);
+
+    return view('regist.complete', compact('user'));
+  }
+}
+```
+
+ルート追加
+これ本では regist にアクセスしろってなってるけどミスかな
+
+```php title="web.php"
+Route::get('/register', [App\Http\Controllers\RegisterController::class, 'create'])
+    ->middleware('guest')
+    ->name('register');
+
+Route::post('/register', [App\Http\Controllers\RegisterController::class, 'store'])
+    ->middleware('guest');
+```
+
+View を作成
+
+```php title="register.blade.php"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ユーザー登録フォーム</title>
+</head>
+<body>
+    <form name="registerorm" action="/register" method="post" id="registerform">
+        <!-- CSRFトークンを挿入するための記述 -->
+        {{ csrf_field() }}
+        <dl>
+            <dt>名前:</dt>
+            <dd><input type="text" name="name" size="30">
+        <span>{{$errors->first('name')}}</span></dd>
+        </dl>
+        <dl>
+            <dt>メールアドレス:</dt>
+            <dd><input type="text" name="email" size="30">
+        <span>{{$errors->first('email')}}</span></dd>
+        </dl>
+        <dl>
+            <dt>パスワード:</dt>
+            <dd><input type="text" name="password" size="30">
+        <span>{{$errors->first('password')}}</span></dd>
+        </dl>
+        <dl>
+            <dt>パスワード(確認):</dt>
+            <dd><input type="text" name="password_confirmation" size="30">
+        <span>{{$errors->first('password_confirmation')}}</span></dd>
+        </dl>
+        <button type='submit' name='action' value='send'>送信</button>
+</form>
+</body>
+</html>
+```
+
+`{{$error->first('')}}`:送信ボタンを押した後にバリデーションエラーがあれば表示させる
+
+適当に user 作成
+http://localhost/register
+
+DB 確認
+
+```zsh
+sail mysql
+mysql> select * from users;
+```
+
+```zsh
++----+-----------+-------------------------+-------------------+--------------------------------------------------------------+----------------+---------------------+---------------------+
+| id | name      | email                   | email_verified_at | password                                                     | remember_token | created_at          | updated_at          |
++----+-----------+-------------------------+-------------------+--------------------------------------------------------------+----------------+---------------------+---------------------+
+|  1 | ryotarofr | ryoryo.fr0608@gmail.com | NULL              | $2y$12$7P/4Ry.tLk3krPAsXTs1Ie3ydlh6soMTcHdpJyfubIBAYUA9xwPmq | NULL           | 2023-12-24 05:44:20 | 2023-12-24 05:44:20 |
+|  2 | a         | a@a.com                 | NULL              | $2y$12$Qq4vDX4DrkdSaXK3sDYBuOXJ7jpTPBo5F7mw/YCBzmMkLNIc70yQW | NULL           | 2023-12-24 05:45:21 | 2023-12-24 05:45:21 |
+|  3 | i         | i@i.com                 | NULL              | $2y$12$nxy9rG/ej0nmKl3SE4zrfeyfngygH38gq7vKfcAEh2.2gNGBJlboe | NULL           | 2023-12-24 05:48:45 | 2023-12-24 05:48:45 |
+|  4 | u         | u@u.com                 | NULL              | $2y$12$mJob32oLvvc.AebRZSWey.n/TJQ6FIOTtreKtgxVaajLBYUFmycBG | NULL           | 2023-12-24 05:49:12 | 2023-12-24 05:49:12 |
++----+-----------+-------------------------+-------------------+--------------------------------------------------------------+----------------+---------------------+---------------------+
+4 rows in set (0.00 sec)
+```
