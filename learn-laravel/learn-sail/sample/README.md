@@ -449,3 +449,26 @@ Route::get('/logout', [App\Http\Controllers\LoginController::class, 'logout'])
 </body>
 </html>
 ```
+
+# イベント
+
+`/app/Providers/EventServiceProvider.php`イベントプロバイダーここに追加
+
+```php title="EventServiceProvider.php"
+protected $listen = [
+        Registered::class => [
+            // SendEmailVerificationNotification::class,
+            'App\Listeners\RegisteredLintener',
+        ],
+    ];
+```
+
+protected $listen は Laravel アプリケーションでイベントとリスナーをマッピングするためのプロパティです。このプロパティを使用すると、特定のイベントが発生したときに実行されるリスナーを定義できます。例えば、Registered::class イベントが発生したときに 'App\Listeners\RegisteredListener' リスナーが実行されるように定義されています。
+
+リスナークラスを生成するコマンド
+
+```zsh
+ sail artisan event:generate
+```
+
+生成される: `/app/Listeners/RegisteredLintener.php`
